@@ -23,14 +23,12 @@ Q Q::newQ(){
     int n = stoi(new_q.name.substr(pos+1));
     n += 1;
     new_q.name = std::string(new_q.name, 0, pos+1) + std::to_string(n);
-    cout << "\nNewQ: name: " << new_q.getName() << " mather: " << new_q.getMName() << endl;
     return (new_q);
 }
 
 bool Q::pregnancy() {
+    show_2();
     if(period == 0) {
-//        cout << " period: " << period << " countChildren: " << countChildren << " countDaughter: " << countDaughter << endl;
-        show_2();
         --period;
         return true;
     }
@@ -39,8 +37,6 @@ bool Q::pregnancy() {
         set_daugher();
         set_children();
     }
-//    cout << " period: " << period << " countChildren: " << countChildren << " countDaughter: " << countDaughter << endl;
-    show_2();
     --period;
     return false;
 }
@@ -115,9 +111,9 @@ void Empire::generatecInsect(int cinsect, Type T)
 }
 
 void Empire::startDay() {
-    cout << "\n--------------------startDay--------------------";
     q.show();
     if(q.pregnancy()) {
+        PrintWord("Королева родила", '*', 1);
         for(int i = q.getCountDaughter(); i>0 ; --i) {
             if((bool) 0 + rand() % 2) {
                 Q qs = q.newQ();
@@ -132,13 +128,15 @@ void Empire::startDay() {
         generateWar(cwar);
         generateWork(cwork);
         generatecInsect(count);
+        PrintWord("Добавилось: " + to_string(cwar) + " к воинам, " + to_string(cwork) + " к рабочим, " +
+                  to_string(count) + " к насекомым");
+        PrintWord("", '*', 1);
     }
 }
 
 void Empire::randomDistribution()
 {
     if(vH.empty()) {
-        cout << "\n-----------------------VECTOR FOR HEAP IS EMPTY!!!!-----------------------\n";
         return ;
     }
     for(size_t i = 0; i < warriors.size(); ++i) {
@@ -167,6 +165,9 @@ void Empire::toTakeResources() {
             ii.second = 0;
         }
     }
+    cout << "Добыли новые ресурсы, теперь мы имеем: ";
+    for(pair<Resources, int> i: resources)
+        cout << to_string(i.first) << ": " << i.second << " ";
 }
 
 void Empire::clear() {
@@ -176,11 +177,7 @@ void Empire::clear() {
             --it;
         }
         else {
-            cout << "-------------Recovery-------------\n";
-            it->get()->show();
             it->get()->setBT();
-            it->get()->show();
-            cout << endl;
         }
     }
     for(auto it = workers.begin(); it != workers.end(); it++) {
@@ -195,34 +192,53 @@ void Empire::clear() {
             --it;
         }
         else {
-            cout << "-------------Recovery-------------\n";
-            it->get()->show();
             it->get()->setBT();
-            it->get()->show();
-            cout << endl;
         }
     }
+    cout << "Сегодня мы простились с нашими братьями, а раненных подлатали." << endl;
 }
 
 void Empire::showArmy() {
-    cout << "\n----------------SHOW ARMY----------------\n";
-    getQ().show();
-    std::cout << "\nPopulation" << " " << workers.size() + warriors.size() + insects.size() << ": "
-              << "workers" << "=" << workers.size() << " "
-              << "warriors" << "=" << warriors.size() << " "
-              << "insects" << "=" << insects.size() << "\n";
-    cout << "Resources: ";
+    showAllAnts();
+    cout << "Ресурсы: ";
     for(pair<Resources, int> i: resources)
         cout << to_string(i.first) << ": " << i.second << " ";
     cout << endl;
 }
 
+void Empire::showAllAnts(){
+    cout << "Всего муравье: " << setw(3) << warriors.size() << "воинов, "
+                              << setw(3) << workers.size() << "рабочих, "
+                              << setw(3) << insects.size() << "насекомых";
+    cout << endl;
+    cout << "\tWarrior:" << endl;
+    for(auto& it: warriors){
+        cout << "\t\t";
+        it->show();
+    }
+    cout << "\tWorker:" << endl;
+    for(auto& it: workers){
+        cout << "\t\t";
+        it->show();
+    }
+    cout << "\tInsect:" << endl;
+    for(auto& it: warriors){
+        cout << "\t\t";
+        it->show();
+    }
+}
+
 void newEmpire(Q& q, int cwork, int cwar, int cinsect) {
     shared_ptr<Empire> E = make_shared<Empire>(q);
+    q.show();
+    E->setNameEmpire(vE.empty()? -1 : vE.at(vE.size()-1)->EmpireName);
     E->setQptrOnE(E);
     E->generateWar(cwar);
     E->generateWork(cwork);
     E->generatecInsect(cinsect);
+    cout << endl;
+    PrintWord("New Empire: name " + to_string(E->EmpireName) + " Queen: " + E->getQ().getName(), ' ', 1);
+    cout << endl;
     vE.emplace_back(E);
 }
 
@@ -244,7 +260,11 @@ void Heap::addIns(SharedInsectPtr& w) {
 }
 
 void hit(Warrior* w, Warrior* d) {
-    cout << "\n\nBefore: "; w->show(); d->show();
+    PrintWord(" Битва ", ' ', 1);
+    cout << "До: ";
+    cout << "\t" << w->getE()->EmpireName << ' ';  w->show();
+    cout << "\t" << d->getE()->EmpireName << ' ';  d->show();
+    cout << endl;
     while(w->getCountBite() || d->getCountBite()) {
         if(!w->getIsAlive()) break;
         if(w->getCountBite() > 0) {
@@ -261,11 +281,19 @@ void hit(Warrior* w, Warrior* d) {
     --d->getCountTargets();
     if(w->getCountTargets() <= 0) w->in_operation = false;
     if(d->getCountTargets() <= 0) d->in_operation = false;
-    cout << "\nAfter: "; w->show(); d->show(); cout << endl;
+    cout << "После: ";
+    cout << "\t" << w->getE()->EmpireName << ' ';  w->show();
+    cout << "\t" << d->getE()->EmpireName << ' ';  d->show();
+    PrintWord("", '_');
+    cout << endl;
 }
 
 void hit(Warrior* w, Worker* d) {
-    cout << "\n\nBefore: "; w->show(); d->show();
+    PrintWord(" Битва ", ' ', 1);
+    cout << "До: ";
+    cout << "\t" << w->getE()->EmpireName << ' ';  w->show();
+    cout << "\t" << d->getE()->EmpireName << ' ';  d->show();
+    cout << endl;
     while(w->getCountBite()) {
         if(!w->getIsAlive()) break;
         if(w->getCountBite() > 0) {
@@ -276,8 +304,11 @@ void hit(Warrior* w, Worker* d) {
     }
     --w->getCountTargets();
     if(w->getCountTargets() <= 0) w->in_operation = false;
-
-    cout << "\nAfter: "; w->show(); d->show(); cout << endl;
+    cout << "После: ";
+    cout << "\t" << w->getE()->EmpireName << ' ';  w->show();
+    cout << "\t" << d->getE()->EmpireName << ' ';  d->show();
+    PrintWord("", '_');
+    cout << endl;
 }
 
 void Heap::delMySelf() {
@@ -324,7 +355,8 @@ void Heap::TAKE_RES() {
     for(auto& it: workers) {
         it.get()->toTakeResource(resources);
     }
-    cout << endl << setw(10) << left << "TAKE_RES: ";
+
+    cout << "Ресурсы: ";
     for(pair<Resources, int> i: resources)
         cout << to_string(i.first) << ": " << i.second << " ";
     cout << endl;
@@ -334,13 +366,32 @@ void Heap::TAKE_RES() {
 }
 
 void Heap::WAR() {
-    show();
+    cout << "Ресурсы: ";
+    for(pair<Resources, int> i: resources)
+        cout << to_string(i.first) << ": " << i.second << " ";
+    cout << endl << endl;
+    cout << "Warrior:" << endl;
+    for(auto& it: warriors){
+        cout << "\t" << it->getE()->EmpireName << ' ';
+        it->show();
+    }
+    cout << "Worker:" << endl;
+    for(auto& it: workers){
+        cout << "\t" << it->getE()->EmpireName << ' ';
+        it->show();
+    }
+    cout << "Insect:" << endl;
+    for(auto& it: insects){
+        cout << "\t" << it->getE()->EmpireName << ' ';
+        it->show();
+    }
+    cout << endl;
+
     for(SharedInsectPtr& it: insects) {
         if(it->getCountTargets() > 0)
             warriors.emplace_back(it);
     }
     random_shuffle(warriors.begin(), warriors.end());
-//    show();
     asd(warriors, warriors);
 
     for(SharedInsectPtr& it: insects) {
@@ -348,8 +399,8 @@ void Heap::WAR() {
             workers.emplace_back(it);
     }
     random_shuffle(workers.begin(), workers.end());
-//    show();
     asd(warriors, workers);
+
     TAKE_RES();
 }
 
@@ -369,7 +420,9 @@ void Heap::show() {
 }
 
 void Tropic::dopEffect(shared_ptr<Empire>& e) {
-    cout <<"\n\n---------------TROPIC DOP_EFFECT---------------\n";
+    PrintWord("", '!', 1);
+    PrintWord("Эффект тропиков начинает свое господство в Empire " + to_string(e->EmpireName));
+    PrintWord("", '!', 1);
     vector<SharedWorkerPtr>& work = e->getWorkers();
     vector<SharedInsectPtr>& ins = e->getInsects();
     for(auto it = work.begin(); it < work.end(); ++it) {
@@ -380,7 +433,9 @@ void Tropic::dopEffect(shared_ptr<Empire>& e) {
     }
 }
 void Tropic::revers(shared_ptr<Empire> &e) {
-    cout <<"\n\n---------------TROPIC REVERS---------------\n";
+    PrintWord("", '!', 1);
+    PrintWord("Эффект тропиков закончил свое господство в Empire " + to_string(e->EmpireName));
+    PrintWord("", '!', 1);
     vector<SharedInsectPtr>& ins = e->getInsects();
     for(auto it = ins.begin(); it < ins.end(); ++it) {
         if(it->get()->getT().get_insect() != defI) continue;
@@ -392,16 +447,24 @@ void Tropic::revers(shared_ptr<Empire> &e) {
 
 
 void showWin(shared_ptr<Empire>& ptr) {
-    cout << "Встречайте! Наш победитель в Голодных играх:\n";
-    ptr->getQ().show();
+    PrintWord(" И в этих 75-х Очень голодных играх побеждает... ", ' ', 1);
+    cout << ptr->getQ().getName() << endl;
+    cout << "Её детки ЛУЧШЕ ВСЕХ умеют пиздить других и тащить нажитое непосильным трудом добро к мамке. \n";
+    cout << "Всего они смогли надыбать: ";
+    for(pair<Resources, int> i: ptr->toGetResource())
+        cout << to_string(i.first) << ": " << i.second << " ";
+    cout << endl;
 }
 
-void startGame(size_t day) {
+void startGame(int day) {
+    srand(time(0));
     Tropic t;
+    PrintWord("Добро пожаловать на 75-е Очень Голодные игры!!!");
+    PrintWord("И пусть удача всегда будет с вами!", ' ', 1);
     while(day && vH.size() > 0) {
-        cout << "\n+++++++++++++++++++++++++++++++++++++++++++++++\n";
-        cout << "До полного пиздеца осталось: " << day;
-        cout << "\n+++++++++++++++++++++++++++++++++++++++++++++++\n";
+        PrintWord("", '+', 1);
+        PrintWord("До полного пиздеца осталось: " + to_string(day) + (day != 1 ? "дней" : "день"), ' ');
+        PrintWord("", '+', 1);
 
         if(t.flag == false || t.ef_day == 0) {
             if(!t.flag){
@@ -420,20 +483,35 @@ void startGame(size_t day) {
         }
         K:
         for(size_t i = 0; i < vE.size(); ++i) {
+            PrintWord(" Empire " + to_string(vE.at(i)->EmpireName), '-', 1);
             vE.at(i)->startDay();
+            vE.at(i)->showArmy();
             vE.at(i)->randomDistribution();
         }
+
+        PrintWord("", 'x', 1);
+        PrintWord("Война", ' ');
+        PrintWord("", 'x', 1);
         for(auto& it: vH) {
+            PrintWord(" Heap " + to_string(it.HeapName), '-', 1);
             it.WAR();
             it.delMySelf();
         }
+        PrintWord("", '$', 1);
+        PrintWord(" Итоги походов ", ' ');
+        PrintWord("", '$', 1);
         for(auto& it: vE) {
+            PrintWord(" Empire " + to_string(it->EmpireName), '-', 1);
             it->clear();
             it->toTakeResources();
-            it->showArmy();
+            PrintWord("", '-', 1);
         }
         for(auto it = vH.begin(); it < vH.end(); ++it) {
             if(it->empty){
+                PrintWord(" Объявление ", '.', 1);
+                cout << "Куча гоФна под названием " << it->HeapName
+                     << " опустела! И она выбывает из гонки на выживание.";
+                PrintWord("", '_', 1);
                 vH.erase(it);
                 --it;
             }
@@ -451,21 +529,24 @@ void startGame(size_t day) {
         }
     }
 
-    size_t max = -1;
-    shared_ptr<Empire> ptr;
-    for(auto& it: vE) {
-        if(it->sumResource() > max) {
-            max = it->sumResource();
-            ptr = it;
+    size_t max = 0;
+    size_t i_max = 0;
+    for(size_t i = 0; i < vE.size(); ++i) {
+        if(vE.at(i)->sumResource() > max) {
+            max = vE.at(i)->sumResource();
+            i_max = i;
         }
     }
-    showWin(ptr);
+    showWin(vE.at(i_max));
 }
 
 int main() {
-    cout << "\nOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n" << endl;
+     PrintWord("", '0', 1);
+
+
     {
-        setlocale(LC_ALL, "Russia");
+        SetConsoleCP(1251);
+        SetConsoleOutputCP(1251);
         int n;
         while(true) {
             cout << "Input day: ";
@@ -502,8 +583,9 @@ int main() {
         startGame(n);
     }
 
-    cout << "\nOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n" << endl;
+     PrintWord("", '0', 1);
     return 0;
 }
+
 
 
