@@ -7,7 +7,31 @@
 #include <algorithm>
 #include <iomanip>
 #include <windows.h>
+#include <ctime>
 using namespace std;
+
+
+
+
+void PrintWord(const string& s, char c = ' ', int mode = 0){
+    if(mode) cout << endl;
+    int width_field = 70; //ширина поля
+    string v(width_field, c); //для наглядности заполняем точками
+    string v1;
+
+    int l_word = s.size();
+    int l_field = v.size();
+    int step = (l_field - l_word)/2;
+
+    for(int i = 0; i < l_word; i++){
+        v1.push_back(s[i]);
+    }
+    copy(v1.begin(), v1.end(),v.begin()+step);
+    for(auto x : v){
+        cout << x;
+    }
+    if(mode) cout << endl;
+}
 
 
 enum Resources{
@@ -50,7 +74,6 @@ enum Type_Parent{
     insects,
     queen
 };
-
 
 struct Type {
     int value;
@@ -102,10 +125,14 @@ struct Type {
 
 
 class Empire;
+class Heap;
 class Q;
 class Worker;
 class SpecialInsect;
 class Warrior;
+
+std::vector<shared_ptr<Empire>> vE;
+std::vector<Heap> vH;
 
 class Base {
 protected:
@@ -114,7 +141,7 @@ protected:
     int d = 0;
     bool isAlive = true;
     Type type = base;
-
+    weak_ptr<Empire> e;
 public:
     Base(int h = 0, int p = 0, int d = 0) {
         this->h = h;
@@ -139,9 +166,13 @@ public:
     Type getT() const { return type;}
 
     bool attacked(int damage);
+    shared_ptr<Empire> getE() { return e.lock();}
+    virtual void setE(weak_ptr<Empire> object) { e = object;}
 
     void show() {
-        cout << " h: " << h << " p: " << p << " d: " << d /*<< " live: " << isAlive << " TYPE: " << type.value*/;
+        cout << "h: " << setw(3) << left << h <<
+                " p: " << setw(3) << left << p <<
+                " d: " << setw(3) << left << d << " ";
     }
 
 
@@ -160,7 +191,6 @@ private:
     int countChildren = 0;
     int countDaughter = 0;
     int fp = 0, tp = 0, fc = 0, tc = 0, fd = 0, td = 0;
-    weak_ptr<Empire> e;
 
     std::vector<Type_Worker> typeWork = {};
     std::vector<Type_Warrier> typeWar = {};
@@ -168,18 +198,14 @@ private:
 public:
     Q():Base(0,0,0) {
         setT(queen);
-//        cout << "\nQ: empty Queen";
     }
     Q(string name, int h, int p, int d): Base(h, p, d), name(name) {
         setT(queen);
-//        cout << "\nQ: " << name << " Queen";
     }
     ~Q() {
 //        cout << "\n~Q: " << name << " " << mather;
     }
 
-    shared_ptr<Empire> getE() { return e.lock();}
-    void setE(weak_ptr<Empire> object) { e = object;}
     string getName() { return name;}
     string getMName() {return mather;}
     void setName(std::string n) {this->name = n;}
@@ -204,10 +230,14 @@ public:
     bool pregnancy();
 
     void show() {
-        cout << "\nQueen:\t" << getName() << " "; Base::show(); show_2();
+        cout << "Queen: " << getName() << " "; Base::show();
+        cout << endl;
     }
     void show_2() {
-        cout << " period: " << period << " countC: " << countChildren << " countD: " << countDaughter;
+        cout << "       " << "period: " << setw(3) << period <<
+                             " countChildren: " << setw(3) << countChildren <<
+                             " countDaughter: " << setw(3) << countDaughter;
+        cout << endl;
     }
 
     Q newQ();
@@ -234,7 +264,10 @@ public:
     Empire(Q& q) {
 //        cout << "\nEmpire: ";
         this->q = q;
-        q.show();
+    }
+    int EmpireName = -1;
+    void setNameEmpire(int i) {
+        EmpireName = i + 1;
     }
 
     ~Empire() {
@@ -255,12 +288,14 @@ public:
     void toTakeResources();
     void startDay();
     void showArmy();
+    void showAllAnts();
     Q& getQ() { return q;}
 
     void randomDistribution();
     std::vector<SharedWorkerPtr>& getWorkers() { return workers;}
     std::vector<SharedInsectPtr>& getInsects() { return insects;}
     std::vector<SharedWarriorPtr>& getWarrior() { return warriors;}
+    std::map<Resources, int> toGetResource() { return resources;}
 
     size_t sumResource() {
         size_t sum = 0;
@@ -286,11 +321,17 @@ public:
         resources[Resources::dewdrop] = dewdrop;
         resources[Resources::pebble] = pebble;
         resources[Resources::leaf] = leaf;
+        setNameHeap(vH.empty()? -1 : vH.at(vH.size()-1).HeapName);
     }
 
     void addWar(SharedWarriorPtr& w);
     void addWork(SharedWorkerPtr& w);
     void addIns(SharedInsectPtr& w);
+
+    int HeapName = -1;
+    void setNameHeap(int i) {
+        HeapName = i + 1;
+    }
 
     void WAR();
     void TAKE_RES();
@@ -304,9 +345,6 @@ public:
     void totalDel();
     void show();
 };
-
-std::vector<shared_ptr<Empire>> vE;
-std::vector<Heap> vH;
 
 void newEmpire(Q& q, int cwork = 0, int cwar = 0, int cinsect = 0);
 
@@ -343,18 +381,15 @@ public:
     virtual ~Worker() {
 //        cout << "\n~Worker";
     }
-    virtual weak_ptr<Empire> getE() { return e; }
-    void setE(weak_ptr<Empire> object) {  e = object; }
-//    std::map<Resources, int>& getResources() { return resources;}
-    int getCounTake() { return count_canTake;}
+    virtual int getCounTake() { return count_canTake;}
 
     virtual void toTakeResource(std::map<Resources, int>& res) = 0;
     virtual std::map<Resources, int>& toGetResource() { return resources;}
 
     virtual void show() = 0;
     void show_2() {
-        cout << " count_canTake: " << count_canTake << " { ";
-        for(auto it: v) cout << to_string(it) << " ";
+        cout << "count_canTake: " << setw(3) << left << count_canTake << " { ";
+        for(auto it: v) cout << setw(3) << left << to_string(it) << " ";
         cout << " } "; show_3();
     }
     void show_3() {
@@ -376,7 +411,8 @@ public:
 //        cout << "\n~SeniorWorker";
     }
     void show() {
-        cout << endl << setw(25) << right << "SeniorWorker:\t"; Base::show(); Worker::show_2();
+        cout << setw(25) << left << "SeniorWorker: "; Base::show(); Worker::show_2();
+        cout << endl;
     }
     void toTakeResource(std::map<Resources, int>& res) {
         for(size_t i = 0; i < v.size(); ++i) {
@@ -405,7 +441,8 @@ public:
 //        cout << "\n~Advanced_sleepy";
     }
     void show() {
-        cout << endl << setw(25) << right << "Advanced_sleepy:\t"; Base::show(); Worker::show_2();
+        cout << setw(25) << left << "Advanced_sleepy: "; Base::show(); Worker::show_2();
+        cout << endl;
     }
     void toTakeResource(std::map<Resources, int>& res) {
         if((rand() % 10) < 3 && !sleep) {
@@ -424,19 +461,17 @@ public:
             if(a != resources[v.at(i)]) break;
         }
     }
-    std::map<Resources, int>& toGetResource() {
-        map<Resources, int> res = {};
-        cout << "\ntoGetResource, Advanced_sleepy ";
+    int getCounTake() {
+        cout << "Advanced_sleepy to ";
         if(sleep && !in_operation) {
             sleep = false;
-//            return {};
+            cout << "sleep\n";
+            return 0;
         }
         else if(!sleep && !in_operation) {
             in_operation = true;
-//            return resources;
         }
-        cout << "sleep - " << sleep << endl;
-        return sleep == false? res : resources;
+        return count_canTake;
     }
 };
 
@@ -451,7 +486,8 @@ public:
 //        cout << "\n~An_ordinary_pickpocket";
     }
     void show() {
-        cout << endl << setw(25) << right << "An_ordinary_pickpocket:\t"; Base::show(); Worker::show_2();
+        cout << setw(25) << left << "An_ordinary_pickpocket: "; Base::show(); Worker::show_2();
+        cout << endl;
     }
     void toTakeResource(std::map<Resources, int>& res) {
         for(size_t i = 0; i < v.size(); ++i) {
@@ -474,7 +510,6 @@ class Warrior: virtual public Base {
 protected:
     int count_bite = 0;
     int count_targets = 0;
-    weak_ptr<Empire> e;
 public:
     Warrior(int h = 0, int p = 0, int d = 0, int cb = 0, int ct = 0, Type t = warrior):
         Base(h, p, d), count_bite(cb), count_targets(ct) {
@@ -484,14 +519,14 @@ public:
     virtual ~Warrior() {
 //        cout << "\n~Warrior";
     }
-    virtual weak_ptr<Empire> getE() { return e;}
-    void setE(weak_ptr<Empire> object) { e = object;}
+
     int& getCountBite() {return count_bite;}
     int& getCountTargets() {return count_targets;}
     virtual bool attacked(int damage) { return Base::attacked(damage);}
     virtual void show() = 0;
     void show_2() {
-        cout << " count_bite: " << count_bite << " count_targets: " << count_targets;
+        cout << "count_bite: " << setw(3) << left  << count_bite
+             << " count_targets: " << setw(3) << left  << count_targets;
     }
     virtual void setBT() = 0;
 };
@@ -509,7 +544,8 @@ public:
 //        cout << "\n~SeniorWarrier";
     }
     void show() {
-        cout << endl << setw(25) << right << "SeniorWarrier:\t"; Base::show(); Warrior::show_2();
+        cout << setw(25) << left << "SeniorWarrier: "; Base::show(); Warrior::show_2();
+        cout << endl;
     }
     void setBT() {
         count_bite = B;
@@ -532,7 +568,8 @@ public:
 //        cout << "\n~Ordinary";
     }
     void show() {
-        cout << endl << setw(25) << right << "Ordinary:\t"; Base::show(); Warrior::show_2();
+        cout << setw(25) << left << "Ordinary: "; Base::show(); Warrior::show_2();
+        cout << endl;
     }
     void setBT() {
         count_bite = B;
@@ -555,7 +592,8 @@ public:
 //        cout << "\n~Advanced";
     }
     void show() {
-        cout << endl << setw(25) << right << "Advanced:\t"; Base::show(); Warrior::show_2();
+        cout << setw(25) << left << "Advanced: "; Base::show(); Warrior::show_2();
+        cout << endl;
     }
     void setBT() {
         count_bite = B;
@@ -578,7 +616,8 @@ public:
 //        cout << "\n~Elite_hero";
     }
     void show() {
-        cout << endl << setw(25) << right << "Elite_hero:\t"; Base::show(); Warrior::show_2();
+        cout << setw(25) << left << "Elite_hero: "; Base::show(); Warrior::show_2();
+        cout << endl;
     }
     void setBT() {
         count_bite = B;
@@ -601,7 +640,8 @@ public:
 //        cout << "\n~Senior_berserker";
     }
     void show() {
-        cout << endl << setw(25) << right << "Senior_berserker:\t"; Base::show(); Warrior::show_2();
+        cout << setw(25) << left << "Senior_berserker: "; Base::show(); Warrior::show_2();
+        cout << endl;
     }
     void setBT() {
         count_bite = B;
@@ -614,8 +654,6 @@ public:
 
 //КЛАСС СПЕЦИАЛЬНЫЕ НАСЕКОМЫЕ--------------------------------------------------------------
 class SpecialInsect: public Warrior, public Worker{
-protected:
-    weak_ptr<Empire> e;
 public:
     SpecialInsect(int h = 0, int p = 0, int d = 0, int canTake = 0,
                   std::vector<Resources> v = {}, int cb = 0, int ct = 0, Type t = insects):
@@ -627,8 +665,7 @@ public:
     virtual ~SpecialInsect() {
 //        cout << "\n~SpecialInsect";
     }
-    weak_ptr<Empire> getE() { return e;}
-    void setE(weak_ptr<Empire> object) {e = object;}
+
     bool isWarrier() { return count_bite == 0 ? false : true;}
     virtual bool attacked(int damage) { return Warrior::attacked(damage);}
     virtual void show() = 0;
@@ -649,7 +686,8 @@ public:
     }
     bool attacked(int damage) { return Warrior::attacked(damage);}
     void show() {
-        cout << endl << setw(25) << right << "Butterfly:\t"; Base::show(); Warrior::show_2(); Worker::show_2();
+        cout << setw(25) << left << "Butterfly: "; Base::show(); Warrior::show_2(); Worker::show_2();
+        cout << endl;
     }
     void setBT() {
         count_bite = B;
@@ -678,7 +716,8 @@ public:
     }
     bool attacked(int damage) { return Warrior::attacked(damage);}
     void show() {
-        cout << endl << setw(25) << right << "Mole_cricket:\t"; Base::show(); Warrior::show_2(); Worker::show_2();
+        cout << setw(25) << left << "Mole_cricket: "; Base::show(); Warrior::show_2(); Worker::show_2();
+        cout << endl;
     }
     void setBT() {
         count_bite = B;
@@ -719,3 +758,4 @@ public:
 #undef TropicDay
 #undef EffectDay
 };
+
