@@ -383,7 +383,7 @@ public:
     }
     virtual int getCounTake() { return count_canTake;}
 
-    virtual void toTakeResource(std::map<Resources, int>& res) = 0;
+    virtual void toTakeResource(std::map<Resources, int>& res, vector<SharedWorkerPtr>& worker) = 0;
     virtual std::map<Resources, int>& toGetResource() { return resources;}
 
     virtual void show() = 0;
@@ -414,7 +414,7 @@ public:
         cout << setw(25) << left << "SeniorWorker: "; Base::show(); Worker::show_2();
         cout << endl;
     }
-    void toTakeResource(std::map<Resources, int>& res) {
+    void toTakeResource(std::map<Resources, int>& res, vector<SharedWorkerPtr>& worker) {
         for(size_t i = 0; i < v.size(); ++i) {
             int a = resources[v.at(i)];
             if(res.find(v.at(i)) == res.end()) continue;
@@ -444,7 +444,7 @@ public:
         cout << setw(25) << left << "Advanced_sleepy: "; Base::show(); Worker::show_2();
         cout << endl;
     }
-    void toTakeResource(std::map<Resources, int>& res) {
+    void toTakeResource(std::map<Resources, int>& res, vector<SharedWorkerPtr>& worker) {
         if((rand() % 10) < 3 && !sleep) {
             sleep = true;
             in_operation = false;
@@ -489,7 +489,8 @@ public:
         cout << setw(25) << left << "An_ordinary_pickpocket: "; Base::show(); Worker::show_2();
         cout << endl;
     }
-    void toTakeResource(std::map<Resources, int>& res) {
+    void toTakeResource(std::map<Resources, int>& res, vector<SharedWorkerPtr>& workers) {
+        auto it = workers.begin();
         for(size_t i = 0; i < v.size(); ++i) {
             int a = resources[v.at(i)];
             if(res.find(v.at(i)) == res.end()) continue;
@@ -501,6 +502,23 @@ public:
             }
             if(a != resources[v.at(i)]) break;
         }
+        for(; it < workers.end() && resources.empty(); ) {
+            if(isEnemy(this->e, it->get()->getE())) {
+                map<Resources, int>& res = it->get()->toGetResource();
+                res[dewdrop] -= count_canTake;
+                resources[dewdrop] += count_canTake;
+                if(res[dewdrop] < 0) {
+                    resources[dewdrop] += res[dewdrop];
+                    res[dewdrop] = 0;
+                }
+            }
+            if(!resources.empty()) {
+                cout << "An_ordinary_pickpocket украл :";
+                this->show();
+                it->get()->show();
+            }
+        }
+
     }
 };
 
@@ -693,7 +711,7 @@ public:
         count_bite = B;
         count_targets = T;
     }
-    void toTakeResource(std::map<Resources, int>& res) {
+    void toTakeResource(std::map<Resources, int>& res, vector<SharedWorkerPtr>& worker) {
         return;
     }
 #undef B
@@ -723,7 +741,7 @@ public:
         count_bite = B;
         count_targets = T;
     }
-    void toTakeResource(std::map<Resources, int>& res) {
+    void toTakeResource(std::map<Resources, int>& res, vector<SharedWorkerPtr>& worker) {
         int i = 0;
         if(res.find(v.at(i)) == res.end()) return;
         if(res[v.at(i)] == 0) {
@@ -758,4 +776,5 @@ public:
 #undef TropicDay
 #undef EffectDay
 };
+
 
