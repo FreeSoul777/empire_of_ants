@@ -352,8 +352,8 @@ void asd(T& t, Q& q) {
 }
 
 void Heap::TAKE_RES() {
-    for(auto& it: workers) {
-        it.get()->toTakeResource(resources);
+    for(auto it = workers.begin(); it < workers.end(); ++it) {
+        it->get()->toTakeResource(resources, workers);
     }
 
     cout << "Ресурсы: ";
@@ -432,6 +432,7 @@ void Tropic::dopEffect(shared_ptr<Empire>& e) {
         --it;
     }
 }
+
 void Tropic::revers(shared_ptr<Empire> &e) {
     PrintWord("", '!', 1);
     PrintWord("Эффект тропиков закончил свое господство в Empire " + to_string(e->EmpireName));
@@ -463,7 +464,7 @@ void startGame(int day) {
     PrintWord("И пусть удача всегда будет с вами!", ' ', 1);
     while(day && vH.size() > 0) {
         PrintWord("", '+', 1);
-        PrintWord("До полного пиздеца осталось: " + to_string(day) + (day != 1 ? "дней" : "день"), ' ');
+        PrintWord("До полного звиздеца осталось: " + to_string(day) + (day != 1 ? " дней" : " день"), ' ');
         PrintWord("", '+', 1);
 
         if(t.flag == false || t.ef_day == 0) {
@@ -563,7 +564,7 @@ int main() {
         elizaveta.setType(std::vector<Type_Worker>{senior_worker, advanced_sleepy},
                           std::vector<Type_Warrier>{senior_warrier, advanced, elite_hero},
                           std::vector<Type_Insect>{butterfly});
-        newEmpire(elizaveta, 3, 3, 1);
+        newEmpire(elizaveta, 17, 7, 1);
 
         Q blanka("Blanka", 24, 6, 21);
         blanka.setFTChildren(1, 15);
@@ -572,7 +573,7 @@ int main() {
         blanka.setType(std::vector<Type_Worker>{senior_worker, an_ordinary_pickpocket},
                        std::vector<Type_Warrier>{senior_warrier, ordinary, senior_berserker},
                        std::vector<Type_Insect>{mole_cricket});
-        newEmpire(blanka, 3, 3, 1);
+        newEmpire(blanka, 17, 7, 1);
 
         vH.push_back(Heap(36, 16, 0, 39));
         vH.push_back(Heap(21, 32, 0, 0));
@@ -586,6 +587,7 @@ int main() {
      PrintWord("", '0', 1);
     return 0;
 }
+
 
 
 
