@@ -222,7 +222,7 @@ void Empire::showAllAnts(){
         it->show();
     }
     cout << "\tInsect:" << endl;
-    for(auto& it: warriors){
+    for(auto& it: insects){
         cout << "\t\t";
         it->show();
     }
