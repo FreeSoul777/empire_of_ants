@@ -1,4 +1,5 @@
 all: queen
+
 queen: queen.o
 	g++ -o queen queen.o
 
